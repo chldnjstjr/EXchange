@@ -1,0 +1,107 @@
+---
+title: "S3_Visualization"
+author: "WS CHOI"
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+# 소개
+
+-   
+
+# 작성자 약력
+
+-   환승연애 1 빨리감기 정주행
+
+-   환승연애 2 정주행 2회
+
+-   환승연애 3
+
+-   솔로지옥 1\~3 정주행
+
+-   하트시그널 2 김현우-오영주 클립 정주행
+
+# 데이터 불러오기
+
+## googlesheets4
+
+-   googlesheets4 패키지를 이용하여 구글 스프레드시트의 데이터를 불러올 수 있습니다.
+-   구글 스프레드시트의 데이터를 불러오기 위해서는 구글 클라우드 플랫폼에서 API를 발급받아야 합니다.
+
+```{r}
+library(googlesheets4)
+
+# Load the data
+gs4_deauth()
+```
+
+## 
+
+```{r}
+url <- "https://docs.google.com/spreadsheets/d/145u9yNb2bUUDG_H8Jg-8fg7XZFUquiY9dWmor7ug7N0/edit?usp=sharing"
+
+s3_data <- read_sheet(url)
+s3_orin <- s3_data
+#s3_data <- s3_orin
+```
+
+```{r}
+library(dplyr)
+
+# s3_data에서 "FROM" 열을 제외하여 업데이트
+s3_data <- s3_data %>% select(-FROM)
+
+#s3_data의 열 이름을 행 이름으로 설정이
+rownames(s3_data) <- colnames(s3_data)
+
+# 데이터 프레임을 행렬로 변환
+matrix_data <- as.matrix(s3_data)
+
+# 결과 출력
+print(matrix_data)
+```
+
+```{r}
+#install.packages("devtools")
+#library(devtools)
+#devtools::install_github("mattflor/chorddiag", build_vignettes = TRUE)
+library(chorddiag)
+```
+
+# 연습
+
+-   출처([Click](https://r-graph-gallery.com/chord-diagram-interactive.html))
+
+```{r}
+# Create dummy data
+m <- matrix(c(11975,  5871, 8916, 2868,
+              1951, 10048, 2060, 6171,
+              8010, 16145, 8090, 8045,
+              1013,   990,  940, 6907),
+            byrow = TRUE,
+            nrow = 4, ncol = 4)
+
+# A vector of 4 colors for 4 groups
+haircolors <- c("black", "blonde", "brown", "red")
+dimnames(m) <- list(have = haircolors,
+                    prefer = haircolors)
+groupColors <- c("#000000", "#FFDD89", "#957244", "#F26223")
+
+# Build the chord diagram:
+p <- chorddiag(m, groupColors = groupColors, groupnamePadding = 20)
+p
+
+```
+
+```{r}
+# 사용자 정의 색상 지정
+groupColors <- RColorBrewer::brewer.pal(12, "Set3")
+
+# 코디어그램 생성
+p <- chorddiag(matrix_data, groupColors = groupColors, groupnamePadding = 20)
+
+# HTML 위젯으로 코디어그램 출력
+# 이 부분은 RStudio의 Viewer 패널이나 웹 브라우저에서 확인 가능
+p
+
+```
