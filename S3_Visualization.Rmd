@@ -46,6 +46,11 @@ output:
 
 # 관계도
 
+```{r}
+library(reprex)
+```
+
+
 ## 데이터 불러오기 (googlesheets4)
 
 -   googlesheets4 패키지를 이용하여 구글 스프레드시트의 데이터 불러오기
@@ -99,13 +104,13 @@ library(chorddiag)
 # 사용자 정의 색상 지정
 
 groupColors <- c("#02B2ED", #광태
-                 "#F0A1D2", #다혜 
+                 "#ED2A02", #다혜 
                  "#021EED", #동진
                  "#0268ED", #민형
                  "#ED0293", #상정
                  "#8502ED", #서경
                  "#ED0206", #유정
-                 "#ED2A02", #종은
+                 "#F0A1D2", #종은
                  "#02EDDD", #주원
                  "#4790EF", #창진
                  "#D102ED", #혜원
@@ -222,7 +227,6 @@ tokenize_noun_ngrams(HWHH, simplify = TRUE, user_dic = dic_file)
 ```{r}
 
 ```
-
 
 -   Chat GPT를 활용한 감정 점수
 
@@ -401,7 +405,7 @@ tokenize_noun_ngrams(HWHH, simplify = TRUE, user_dic = dic_file)
         | 사귈 당시 사랑했었던 감정 | 91점 |
         | 미련                      | 78점 |
 
-    -   창진 -> 유정
+    -   창진 -\> 유정
 
         이 편지에서는 유정에 대한 무한한 애정과 그녀의 매력적인 특성에 대한 감탄, 그리고 이별 후의 반성과 바람이 느껴집니다. 유정이 가진 외모뿐만 아니라 성격의 아름다움, 그리고 그녀의 배려심과 세심함이 강조되며, 이러한 특성들이 편지 작성자에게 큰 감동을 준 것으로 보입니다. 또한, 유정이의 취미와 성격적 특성이 잘 드러나며, 편지 작성자는 유정이와의 관계에서 소통의 부족을 크게 후회하고 있습니다.
 
@@ -430,7 +434,7 @@ tokenize_noun_ngrams(HWHH, simplify = TRUE, user_dic = dic_file)
 
 -   Chat GPT를 활용한 감정 점수
 
-    -   민형 -> 상정
+    -   민형 -\> 상정
 
         이 편지에서는 상정에 대한 깊은 애정과 사랑, 그리고 그녀의 여러 매력적인 면모에 대한 감탄이 느껴집니다. 상정이가 가진 귀여움, 아름다움, 밝음, 그리고 때로는 여린 모습까지 모두 작성자를 무장 해제시키고 사랑하게 만든 요소로서 서술됩니다. 특히, 상정이의 긍정적인 에너지와 사소한 것에서도 행복을 찾는 순수함이 작성자에게 큰 힘이 되었던 것 같습니다.
 
@@ -465,7 +469,7 @@ tokenize_noun_ngrams(HWHH, simplify = TRUE, user_dic = dic_file)
 
 -   Chat GPT를 활용한 감정 점수
 
-    -   종은 -> 광태
+    -   종은 -\> 광태
 
         이 편지는 광태에 대한 깊은 애정과 존경, 그리고 약간의 아쉬움이 느껴집니다. 광태의 강한 면모와 함께 그가 가진 순수함과 귀여운 측면까지 다양한 감정이 복합적으로 얽혀 있습니다. 광태가 늘 새로운 것에 도전하는 모험심, 긍정적인 삶의 태도, 그리고 사랑스러움까지 편지 작성자가 광태를 얼마나 잘 이해하고 있으며, 그의 성장과 행복을 진심으로 바랐는지가 드러납니다.
 
@@ -498,4 +502,44 @@ tokenize_noun_ngrams(HWHH, simplify = TRUE, user_dic = dic_file)
 
 -   Chat GPT 실제 채팅창 ([Click](https://chat.openai.com/share/77c1987c-548f-4cd7-90cd-4c580fcc8d7d))
 
-    -   프롬프트 참고 -> 넷마블 기술 블로그: Chat GPT를 활용해 정성적인 기대감을 정량적인 숫자로 바꿔보다 ([Click](https://netmarble.engineering/comment-metric-labeling-by-chatgpt/))
+    -   프롬프트 참고 -\> 넷마블 기술 블로그: Chat GPT를 활용해 정성적인 기대감을 정량적인 숫자로 바꿔보다 ([Click](https://netmarble.engineering/comment-metric-labeling-by-chatgpt/))
+
+
+```{r, echo=FALSE, eval=FALSE}
+library(googlesheets4)
+
+gs4_deauth()
+
+url <- "https://docs.google.com/spreadsheets/d/145u9yNb2bUUDG_H8Jg-8fg7XZFUquiY9dWmor7ug7N0/edit?usp=sharing"
+
+s3_data <- read_sheet(url)
+
+library(dplyr)
+
+s3_data <- s3_data %>% select(-FROM)
+
+rownames(s3_data) <- colnames(s3_data)
+
+matrix_data <- as.matrix(s3_data)
+
+
+library(chorddiag)
+
+groupColors <- c("#02B2ED", #광태
+                 "#ED2A02", #다혜 
+                 "#021EED", #동진
+                 "#0268ED", #민형
+                 "#ED0293", #상정
+                 "#8502ED", #서경
+                 "#ED0206", #유정
+                 "#F0A1D2", #종은
+                 "#02EDDD", #주원
+                 "#4790EF", #창진
+                 "#D102ED", #혜원
+                 "#3302ED") #휘현
+
+p <- chorddiag(matrix_data, groupColors = groupColors, groupnamePadding = 20)
+
+p
+```
+
