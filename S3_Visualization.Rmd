@@ -50,7 +50,6 @@ output:
 library(reprex)
 ```
 
-
 ## 데이터 불러오기 (googlesheets4)
 
 -   googlesheets4 패키지를 이용하여 구글 스프레드시트의 데이터 불러오기
@@ -486,11 +485,214 @@ tokenize_noun_ngrams(HWHH, simplify = TRUE, user_dic = dic_file)
 
 ## 각 출연자들에 대한 여론
 
-### 시청자들의 예상
+-   15화 공개 후 (2024년 3월 15일 금요일 \~ 2024년 3월 21일 목요일)
 
--   14화 공개 후 - 2024년 3월 00일 ㄱㄱ요일
+```{r}
+df <- read.csv("C:/Users/choiw/Downloads/15화(3.15~21, 54명).csv")
+```
 
--   15화 공개 후 - 2024년 3월 00일 ㄱㄱ요일
+```{r}
+# 필요한 패키지 로드
+library(ggplot2)
+library(reshape2)
+```
+
+```{r}
+# 남성과 여성 출연자 분리
+female_participants <- c('종은', '상정', '유정', '서경', '다혜', '혜원')
+male_participants <- c('광태', '민형', '창진', '주원', '동진', '휘현')
+```
+
+```{r}
+# 예상 선택 데이터 전처리
+predict_columns <- grep("PREDICT_", names(df), value = TRUE)
+predict_data <- df[, predict_columns]
+
+# 예상 선택 매트릭스 생성 함수
+create_predict_matrix <- function(data, participants) {
+  columns <- paste0("PREDICT_", participants)
+  flat_data <- stack(data[, columns, drop = FALSE])
+  matrix <- table(flat_data$values, sub("PREDICT_", "", flat_data$ind))
+  return(as.matrix(matrix))
+}
+```
+
+```{r}
+# 여성 출연자에 대한 예상 선택 매트릭스 생성
+female_predict_matrix <- create_predict_matrix(predict_data, female_participants)
+female_melted <- melt(female_predict_matrix)
+
+# 빈도 및 비율 추가
+female_melted$freq <- female_melted$value
+
+# 행별 합계로 비율 계산
+female_melted <- within(female_melted, {
+  Var2 <- as.factor(Var2)
+  prop <- ave(value, Var2, FUN = function(x) x / sum(x))
+  percentage <- prop * 100
+})
+
+# 매트릭스 시각화
+ggplot(female_melted, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +  # 빈도에 따라 색상을 채웁니다.
+  geom_text(aes(label = paste(freq, "(", sprintf("%.1f%%", percentage), ")", sep="")), vjust = 1) +  # 빈도와 비율을 표시합니다.
+  scale_fill_gradient(low = "pink", high = "red") +
+  theme_minimal() +
+  labs(title = "각 여성 출연자가 최종적으로 누구를 선택할 것으로 예상하십니까?",
+       x = "TO",
+       y = "FROM")
+```
+
+
+```{r}
+# 남성 출연자에 대한 예상 선택 매트릭스 생성
+male_predict_matrix <- create_predict_matrix(predict_data, male_participants)
+male_melted <- melt(male_predict_matrix)
+
+# 전체 응답수 계산
+total_responses <- sum(male_predict_matrix)
+
+# 빈도 및 비율 추가
+male_melted$freq <- male_melted$value
+
+# 행별 합계로 비율 계산
+male_melted <- within(male_melted, {
+  Var2 <- as.factor(Var2)
+  prop <- ave(value, Var2, FUN = function(x) x / sum(x))
+  percentage <- prop * 100
+})
+
+# 매트릭스 시각화
+ggplot(male_melted, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +  # 빈도에 따라 색상을 채웁니다.
+  geom_text(aes(label = paste(freq, "(", sprintf("%.1f%%", percentage), ")", sep="")), vjust = 1) +  # 빈도와 비율을 표시합니다.
+  scale_fill_gradient(low = "#79A5DB", high = "#3047DB") +
+  theme_minimal() +
+  labs(title = "각 남성 출연자가 최종적으로 누구를 선택할 것으로 예상하십니까?",
+       x = "TO",
+       y = "FROM")
+```
+
+```{r}
+# 데이터 전처리: 희망 선택 매트릭스 생성
+hope_data <- df[,grepl("HOPE_", names(df))]
+hope_matrix <- table(stack(hope_data)$values, stack(hope_data)$ind)
+
+#"hope_" 제거
+colnames(hope_matrix) <- gsub("HOPE_", "", colnames(hope_matrix))
+
+# 빈도 및 비율 추가
+hope_melted <- melt(hope_matrix)
+# 빈도 및 비율 추가
+hope_melted$freq <- hope_melted$value
+
+# 행별 합계로 비율 계산
+hope_melted <- within(hope_melted, {
+  Var2 <- as.factor(Var2)
+  prop <- ave(value, Var2, FUN = function(x) x / sum(x))
+  percentage <- prop * 100
+})
+
+# "없음"을 마지막으로 배치하기 위한 factor 수준 재정렬
+hope_melted$Var1 <- factor(hope_melted$Var1, levels = c(setdiff(unique(hope_melted$Var1), "없음"), "없음"))
+
+# 희망 선택 매트릭스 시각화
+ggplot(hope_melted, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile() +  # 빈도에 따라 색상
+  geom_text(aes(label = paste(freq, "(", sprintf("%.1f%%", percentage), ")", sep="")), vjust = 1) +  # 빈도와 비율을 표시
+  scale_fill_gradient(low="white", high="green") +
+  theme_minimal() +
+  labs(title="각 출연자가 어떤 상대와 최종 커플이 되길 희망하십니까?", x="여성", y="남성")
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# PREDICT_ 선택 데이터 처리
+predict_data <- df %>%
+  select(starts_with("PREDICT_")) %>%
+  pivot_longer(cols = everything(), names_to = "predictor", values_to = "chosen") %>%
+  mutate(predictor = sub("PREDICT_", "", predictor))
+
+
+# 남성과 여성 데이터 분리
+female_data <- predict_data %>% select(ends_with(female_participants))
+male_data <- predict_data %>% select(ends_with(male_participants))
+
+
+# 상호 선택 빈도 계산
+matching_pairs <- predict_data %>%
+  filter(predictor %in% male_participants & chosen %in% female_participants) %>%
+  group_by(predictor, chosen) %>%
+  summarise(frequency = n()) %>%
+  arrange(desc(frequency))
+
+# 결과 출력
+print(matching_pairs)
+
+```
+
+```{r}
+library(stringr)
+
+predict_long <- df %>%
+  select(starts_with("PREDICT_")) %>%
+  pivot_longer(everything(), names_to = "predictor", values_to = "chosen") %>%
+  mutate(predictor = str_replace(predictor, "PREDICT_", ""),
+         gender_of_predictor = ifelse(predictor %in% male_participants, "Male", "Female"))
+# 남성이 여성을 선택한 빈도와 여성이 남성을 선택한 빈도 계산
+selection_freq <- predict_long %>%
+  filter((predictor %in% male_participants & chosen %in% female_participants) | 
+         (predictor %in% female_participants & chosen %in% male_participants)) %>%
+  group_by(predictor, chosen) %>%
+  summarise(frequency = n(), .groups = 'drop')
+
+# 상호 선택 빈도 계산과 차이가 가장 적은 쌍 찾기를 위한 수정된 코드
+mutual_selection <- selection_freq %>%
+  inner_join(selection_freq, by = c("predictor" = "chosen", "chosen" = "predictor")) %>%
+  mutate(diff = abs(frequency.x - frequency.y)) %>% 
+  arrange(desc(frequency.x))
+
+mutual_selection
+
+```
+
+### Chord Diagram
+
+```{r}
+library(circlize)
+library(RColorBrewer)
+
+# mutual_selection 데이터 프레임 준비
+# 여기서는 mutual_selection 데이터 프레임이 이미 준비되었다고 가정합니다.
+
+# 색상 팔레트 생성
+participants <- unique(c(male_participants, female_participants))
+colors <- brewer.pal(n = min(length(participants), 12), name = "Paired")
+
+# 만약 participants의 수가 12를 초과하면, 색상 벡터를 확장합니다.
+if (length(participants) > 12) {
+  colors <- c(colors, colorRampPalette(brewer.pal(9, "Set3"))(length(participants) - 12))
+}
+
+# 출연자에 색상 할당
+color_assignment <- setNames(colors, participants)
+
+# Chord diagram을 위한 grid 형식의 데이터 생성
+grid_data <- data.frame(
+  from = mutual_selection$predictor,
+  to = mutual_selection$chosen,
+  value = mutual_selection$frequency.x
+)
+
+# Chord diagram 그리기
+chordDiagram(
+  grid_data, 
+  grid.col = color_assignment[grid_data$from],  # 출연자별로 색상 할당
+  transparency = 0.5
+)
+```
 
 # 최종 선택 예측
 
@@ -503,7 +705,6 @@ tokenize_noun_ngrams(HWHH, simplify = TRUE, user_dic = dic_file)
 -   Chat GPT 실제 채팅창 ([Click](https://chat.openai.com/share/77c1987c-548f-4cd7-90cd-4c580fcc8d7d))
 
     -   프롬프트 참고 -\> 넷마블 기술 블로그: Chat GPT를 활용해 정성적인 기대감을 정량적인 숫자로 바꿔보다 ([Click](https://netmarble.engineering/comment-metric-labeling-by-chatgpt/))
-
 
 ```{r, echo=FALSE, eval=FALSE}
 library(googlesheets4)
@@ -542,4 +743,3 @@ p <- chorddiag(matrix_data, groupColors = groupColors, groupnamePadding = 20)
 
 p
 ```
-
